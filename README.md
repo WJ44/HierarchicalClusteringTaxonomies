@@ -1,1 +1,9 @@
 # HierarchicalClusteringTaxonomies
+## Step 1: Data Preparation
+Data ``dataPreparation.ipynb`` file assumes the following file structure for the dataset: a folder called ``data\All`` with subfolders ``[Crime]`` containing image files from security camera footage with filenames that start with ``[Crime][video_num]``. Running the code creates random folds of the dataset, keeping all images that belong to the same video in the same fold, and assuring approximately equal distribution of types of crime in each fold.
+
+## Step 2: Clustering
+The ``clustering.ipynb`` contains code that loads the (whole) dataset and uses a pretrained ResNet50 model to extract informative features, by taking the output of the last layer before the softmax layer. It then takes the mean of each class as datapoints and performs agglomerative clustering. The silhoutte score is calculated for each step in the clustering. This is useful for making illustrations. Then the file contains code for building the ontologies. It finds the places in the dendrogram whith the largest difference in silhoutte score between consecutive merges. These places represent "cuts" in the dendrogram of the clustering. It then constructs ontologies for the dataset in a json format to be used later.
+
+## Step 3: Training
+The ``trainAndTestAll.py`` file contains all the code to train and test the classifiers using k-fold crossvalidation. It first creates some datastructers needed to calculate hF1 score later on. It then loops over all the test folds. It then loops over all the ontologies and trains the classifier on the remaining folds, which requires some data preprossesing to train the different classifiers represented by nodes of the ontology. It then loops over all ontologies again to calculate the test metrics.

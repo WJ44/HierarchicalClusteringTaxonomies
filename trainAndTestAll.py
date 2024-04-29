@@ -13,16 +13,11 @@ import shutil
 import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, accuracy_score, confusion_matrix
 import json
-#%%
-# ontologies = ['regular', 'semanticOntology', 'aggolomerativeOntologyAverage', 'aggolomerativeOntologyComplete',
-#               'aggolomerativeOntologySingle', 'aggolomerativeOntologyWard']
-ontologies = ['semanticOntology']
-
-ontologyFile = open('./semanticOntology.json')
-ontology = json.load(ontologyFile)
 
 
-#%%
+ontologies = ['regular', 'semanticOntology', 'aggolomerativeOntologyAverage', 'aggolomerativeOntologyComplete',
+              'aggolomerativeOntologySingle', 'aggolomerativeOntologyWard']
+
 def get_classes(node):
     classes = []
     mapping = {}
@@ -39,8 +34,6 @@ def get_classes(node):
     node['mapping'] = mapping
     node['labels'] = labels
     return classes
-
-get_classes(ontology)
 
 semanticOntologyFile = open('./semanticOntology.json')
 semanticOntology = json.load(semanticOntologyFile)
@@ -60,7 +53,7 @@ for category in semanticOntology["classes"]:
     ancestors = set()
     find_ancestors(category, semanticOntology, ancestors)
     ancestors_map[category] = ancestors
-#%%
+
 train_data_dir = './data/Train'
 test_data_dir = './data/Val'
 
@@ -85,7 +78,7 @@ for test_fold in range(folds):
         files = [x for x in files if x != 'desktop.ini']
         for filename in files:
             shutil.copy('./data/' + str(test_fold) + '/' + category + '/' + filename, test_data_dir + '/' + category + '/')
-    #%%
+    
     img_height, img_width = 240, 320
     batch_size = 64
 
@@ -104,7 +97,7 @@ for test_fold in range(folds):
     
     print('Preprocessing')
     train_dataset = train_dataset.map(preprocess)
-    #%%
+    
     def train_nodes(node):
         print(f'Training {node["name"]}')
         n_classes = len(node['children'])
@@ -177,7 +170,7 @@ for test_fold in range(folds):
 
     test_df['image'] = [preprocess_image(x) for x in test_df['image']]
 
-    #%%
+    
     prediction_dict = {}
     for category in categories:
         prediction_dict[category] = 1
@@ -209,7 +202,7 @@ for test_fold in range(folds):
             if 'leaf' not in c.keys():
                 test_nodes(c)
 
-    #%%
+    
     def sum_predictions(predictions):
         final_prediction = {}
         for category in categories:
@@ -243,82 +236,3 @@ for test_fold in range(folds):
         # print(classification_report(predictions['class'], predictions['prediction']))
         print(accuracy_score(predictions['class'], predictions['prediction']))
         print(confusion_matrix(predictions['class'], predictions['prediction']))
-
-# test_data_dir = './data/Val'
-# img_height, img_width = 240, 320
-
-# categories = get_classes(ontology)
-
-# test_df = pd.DataFrame()
-# for category in tqdm(categories):
-#     images = os.listdir(test_data_dir + '/' + category)
-#     images = [test_data_dir + '/' + category + '/' + x for x in images if x != 'desktop.ini']
-#     df = pd.DataFrame({'image': images})
-#     df['recording'] = df['image'].map(lambda x: re.search(r'.*/([a-zA-X]+\d+)_.*\.jpg', x).group(1))
-#     df['class'] = category
-#     test_df = pd.concat([test_df, df], ignore_index=True)
-
-# def preprocess_image(image):
-#     image = tf.io.read_file(image)
-#     image = tf.io.decode_jpeg(image, channels=3)
-#     image = tf.image.resize(image, [img_height, img_width])
-#     image = tf.keras.applications.resnet50.preprocess_input(image)
-#     image = image.numpy()
-#     return image
-
-# test_df['image'] = [preprocess_image(x) for x in test_df['image']]
-
-# #%%
-# prediction_dict = {}
-# for category in categories:
-#     prediction_dict[category] = 1
-# test_df['prediction'] = [prediction_dict.copy() for _ in range(len(test_df))]
-
-# test_ds = tf.data.Dataset.from_generator(lambda: test_df['image'], output_signature=(tf.TensorSpec(shape=(240, 320, 3), dtype=tf.float32)))
-# test_ds = test_ds.batch(batch_size)
-
-# def test_nodes(node):
-#     print(f'Testing {node["name"]}')
-
-#     model = tf.keras.models.load_model(model_path + node['name'])
-#     prediction = model.predict(test_ds)
-
-#     def prediction_mapping(prediction):
-#         classification = {}
-#         for category, label in node['mapping'].items():
-#             classification[category] = prediction[node['labels'].index(label)]
-#         return classification
-
-#     predictions = [prediction_mapping(x) for x in prediction]
-
-#     def update_predictions(prediction):
-#         for category in node['classes']:
-#             prediction['prediction'][category] *= predictions[prediction.name][category]
-
-#     test_df.apply(update_predictions, axis=1)
-#     for c in node['children']:
-#         if 'leaf' not in c.keys():
-#             test_nodes(c)
-
-# #%%
-# def sum_predictions(predictions):
-#     final_prediction = {}
-#     for category in categories:
-#         final_prediction[category] = 0
-#         for prediction in predictions:
-#             final_prediction[category] += prediction[category]
-#     return final_prediction
-
-# for o in ontologies:
-#     print(o, test_fold)
-#     ontologyFile = open('./' + o + '.json')
-#     ontology = json.load(ontologyFile)
-#     model_path = './models/' + str(test_fold) + '/' + o + '/'
-#     get_classes(ontology)
-
-#     test_nodes(ontology)
-#     predictions = test_df.groupby('recording').agg({'class': 'first', 'prediction': sum_predictions})
-#     predictions['prediction'] = predictions['prediction'].map(lambda x: max(x, key=x.get))
-#     # print(classification_report(predictions['class'], predictions['prediction']))
-#     print(accuracy_score(predictions['class'], predictions['prediction']))
-#     print(confusion_matrix(predictions['class'], predictions['prediction']))
